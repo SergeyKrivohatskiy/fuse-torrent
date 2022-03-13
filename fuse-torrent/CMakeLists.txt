@@ -24,15 +24,25 @@ endmacro(_create_source_groups)
 
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
                   "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-conan_cmake_run(CONANFILE conanfile.txt
-                BASIC_SETUP
-                BUILD missing)
+conan_cmake_configure(REQUIRES libtorrent/2.0.1
+                               cli11/2.1.2
+                               indicators/2.2
+                      GENERATORS cmake)
 
+conan_cmake_autodetect(settings)
+
+conan_cmake_install(PATH_OR_REFERENCE .
+                    BUILD missing
+                    REMOTE conancenter
+                    SETTINGS ${settings})
+
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
 
 _find_files(SOURCES "src/*.c*")
 _find_files(HEADERS "include/*.h*")

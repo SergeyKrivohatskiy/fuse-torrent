@@ -1,6 +1,0 @@
-[requires]
-cli11/2.1.2
-indicators/2.2
-
-[generators]
-cmake
