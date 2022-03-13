@@ -11,7 +11,7 @@ macro(_find_files variable_name files_regexp)
 endmacro(_find_files)
 
 macro(_create_source_groups files_list root_path groups_prefix)
-    if (WIN32)
+    if(WIN32)
         foreach(_file IN ITEMS ${files_list})
             get_filename_component(_file_path "${_file}" PATH)
             file(RELATIVE_PATH _file_path_rel "${root_path}" "${_file_path}")
@@ -44,12 +44,23 @@ conan_cmake_install(PATH_OR_REFERENCE .
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+if(WIN32)
+    # if you get an error here you should install WinFsp with the developer component
+    find_package(WinFsp REQUIRED)
+    set(FUSE_LIBRARY WinFsp::WinFsp)
+else(WIN32)
+    # TODO
+    message(ERROR "FUSE library required")
+endif(WIN32)
+
 _find_files(SOURCES "src/*.c*")
 _find_files(HEADERS "include/*.h*")
 
 add_executable(FuseTorrent ${SOURCES} ${HEADERS})
 target_include_directories(FuseTorrent PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
-target_link_libraries(FuseTorrent ${CONAN_LIBS})
+target_link_libraries(FuseTorrent ${CONAN_LIBS} ${FUSE_LIBRARY})
 
 _create_source_groups("${SOURCES}" "${CMAKE_CURRENT_LIST_DIR}/src" "sources")
 _create_source_groups("${HEADERS}" "${CMAKE_CURRENT_LIST_DIR}/include" "headers")
