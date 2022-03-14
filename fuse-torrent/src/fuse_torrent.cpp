@@ -422,10 +422,11 @@ int downloadTorrentWithFuseMapping(
 
     std::string mappingDirectoryStr = mappingDirectory.generic_string();
     mappingDirectoryStr.push_back('\0');
-    int const argc = 2;
-    char *argv[3];
+    int const argc = 3;
+    char *argv[4];
     argv[0] = "";
-    argv[1] = mappingDirectoryStr.data();
-    argv[2] = nullptr;
+    argv[1] = "-f";
+    argv[2] = mappingDirectoryStr.data();
+    argv[3] = nullptr;
     return fuse_main(argc, argv, &redirectOperations, &fuseTorrent);
 }
