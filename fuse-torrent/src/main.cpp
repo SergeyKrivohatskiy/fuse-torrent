@@ -48,5 +48,6 @@ int main(int argc, char *argv[])
         }
     }
     
-    return downloadTorrentWithFuseMapping(torrentFile, targetDirectory, mappingDirectory);
+    return downloadTorrentWithFuseMapping(
+            torrentFile, targetDirectory, mappingDirectory);
 }
