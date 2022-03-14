@@ -55,6 +55,8 @@ else(WIN32)
     message(ERROR "FUSE library required")
 endif(WIN32)
 
+configure_file(".clang-format" ".clang-format" COPYONLY)
+
 _find_files(SOURCES "src/*.c*")
 _find_files(HEADERS "include/*.h*")
 

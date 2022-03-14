@@ -1,4 +1,4 @@
-#include "FuseTorrent.hpp"
+#include "fuse_torrent.hpp"
 
 #include <CLI/CLI.hpp>
 
@@ -47,8 +47,6 @@ int main(int argc, char *argv[])
             return -1;
         }
     }
-
-    FuseTorrent fuseTorrent(torrentFile, targetDirectory, mappingDirectory);
     
-    return fuseTorrent.start();
+    return downloadTorrentWithFuseMapping(torrentFile, targetDirectory, mappingDirectory);
 }
