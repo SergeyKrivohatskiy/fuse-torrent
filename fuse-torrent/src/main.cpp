@@ -1,8 +1,6 @@
-#include "download_torrent.hpp"
+#include "FuseTorrent.hpp"
 
 #include <CLI/CLI.hpp>
-
-#include <filesystem>
 
 
 int main(int argc, char *argv[])
@@ -12,7 +10,7 @@ int main(int argc, char *argv[])
             "that, in addition to just downloading a torrent, allows "
             "using any file from the torrent before fully downloading "
             "via a virtual file system",
-            "FUSE torrent client");
+            "FuseTorrent");
 
     std::filesystem::path torrentFile;
     app.add_option("torrent_file", torrentFile, "'.torrent' file to download")
@@ -50,7 +48,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    downloadTorrent(torrentFile, targetDirectory, mappingDirectory);
+    FuseTorrent fuseTorrent(torrentFile, targetDirectory, mappingDirectory);
     
-    return 0;
+    return fuseTorrent.start();
 }
