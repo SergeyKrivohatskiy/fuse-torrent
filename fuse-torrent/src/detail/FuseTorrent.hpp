@@ -5,7 +5,6 @@
 
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_info.hpp>
-#include <libtorrent/alert_types.hpp>
 
 #include <indicators/progress_bar.hpp>
 #include <indicators/multi_progress.hpp>
@@ -52,19 +51,30 @@ private:
     
     PieceData loadWithCache(lt::piece_index_t pIdx);
     PieceData loadFromTorrent(lt::piece_index_t pIdx);
+    std::shared_future<PieceData> placePieceRequest(lt::piece_index_t pIdx);
+    PieceData waitForData(lt::piece_index_t pIdx,
+            std::shared_future<PieceData> pieceDataFuture);
+
+    void requestPieceDownload(lt::piece_index_t pIdx);
+
+    void updateTorrentDownloadProgress();
 
 private:
-    std::filesystem::path m_mappingDirectory;
     indicators::ProgressBar m_downloadProgress;
     indicators::ProgressBar m_pieceProgress;
     indicators::MultiProgress<indicators::ProgressBar, 2> m_progressBars;
+
     lt::session m_ltSession;
     lt::torrent_info m_torrentInfo;
-    detail::PathResolver m_pathResolver;
     lt::torrent_handle m_torrentHandle;
-    std::mutex m_mutex;
+
+    detail::PathResolver m_pathResolver;
+
+    std::mutex m_pieceRequiestsMutex;
     std::map<lt::piece_index_t, PieceRequest> m_pieceRequiests;
+
     detail::Cache<lt::piece_index_t, PieceData, 32> m_pieceCache;
+
     std::thread m_torrentDownloadThread;
 };
 

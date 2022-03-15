@@ -55,9 +55,11 @@ struct fuse_operations initOperations()
 
 
 const struct fuse_operations redirectOperations = initOperations();
+
 }
 
-} // namespace
+}
+// namespace
 
 
 int downloadTorrentWithFuseMapping(
