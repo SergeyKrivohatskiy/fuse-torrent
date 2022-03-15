@@ -58,11 +58,10 @@ endif(WIN32)
 configure_file(".clang-format" ".clang-format" COPYONLY)
 
 _find_files(SOURCES "src/*.c*")
-_find_files(HEADERS "include/*.h*")
+_find_files(HEADERS "src/*.h*")
 
 add_executable(FuseTorrent ${SOURCES} ${HEADERS})
-target_include_directories(FuseTorrent PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 target_link_libraries(FuseTorrent ${CONAN_LIBS} ${FUSE_LIBRARY})
 
 _create_source_groups("${SOURCES}" "${CMAKE_CURRENT_LIST_DIR}/src" "sources")
-_create_source_groups("${HEADERS}" "${CMAKE_CURRENT_LIST_DIR}/include" "headers")
+_create_source_groups("${HEADERS}" "${CMAKE_CURRENT_LIST_DIR}/src" "headers")

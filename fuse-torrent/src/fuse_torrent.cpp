@@ -229,6 +229,9 @@ int FuseTorrent::read(
 {
     int const fIdx = static_cast<int>(fi->fh);
     lt::file_storage const &fs = m_torrentInfo.files();
+    if (fIdx >= fs.num_files()) {
+        return -EBADF;
+    }
 
     int64_t const fileSize = fs.file_size(fIdx);
     if (off == fileSize) {

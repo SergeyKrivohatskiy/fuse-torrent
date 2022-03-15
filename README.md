@@ -14,6 +14,8 @@ TODO
     - go to [winfsp](https://winfsp.dev/rel/) website
     - download winfsp installer
     - install `core` and `develop` winfsp components
+- FUSE (Linux/OSX only)
+    - e.g. for Centos:  `yum install fuse fuse-devel`
 
 ## Instructions
 - clone repo
