@@ -5,7 +5,7 @@
 #include <libtorrent/alert_types.hpp>
 
 #include <indicators/progress_bar.hpp>
-#include <indicators/dynamic_progress.hpp>
+#include <indicators/multi_progress.hpp>
 
 #include <fuse/fuse.h>
 
@@ -61,15 +61,12 @@ private:
     
     PieceData loadWithCache(lt::piece_index_t pIdx);
     PieceData loadFromTorrent(lt::piece_index_t pIdx);
-    
-    indicators::ProgressBar &torrentDownloadProgress();
-    indicators::ProgressBar &pieceProgress();
 
 private:
     std::filesystem::path m_mappingDirectory;
     indicators::ProgressBar m_downloadProgress;
     indicators::ProgressBar m_pieceProgress;
-    indicators::DynamicProgress<indicators::ProgressBar> m_progressBars;
+    indicators::MultiProgress<indicators::ProgressBar, 2> m_progressBars;
     lt::session m_ltSession;
     lt::torrent_info m_torrentInfo;
     PathsInfo m_pathMap;
@@ -280,7 +277,7 @@ void FuseTorrent::torrentDownloadCycle()
 
         lt::torrent_status const status =
                 m_torrentHandle.status(lt::status_flags_t());
-        torrentDownloadProgress().set_progress(
+        m_progressBars.set_progress<0>(
                 static_cast<size_t>(status.progress * 100));
     }
 }
@@ -328,7 +325,7 @@ PieceData FuseTorrent::loadFromTorrent(lt::piece_index_t const pIdx)
                 lt::top_priority - pOff);
     }
 
-    pieceProgress().set_progress(0);
+    m_progressBars.set_progress<1>(size_t(0));
     while (!m_torrentHandle.have_piece(pIdx)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -342,23 +339,12 @@ PieceData FuseTorrent::loadFromTorrent(lt::piece_index_t const pIdx)
                 });
         if (it != downloadQueue.end()) {
             size_t const progress = it->finished * 100 / it->blocks_in_piece;
-            pieceProgress().set_progress(progress);
+            m_progressBars.set_progress<1>(progress);
         }
     }
-    pieceProgress().set_progress(100);
+    m_progressBars.set_progress<1>(size_t(100));
 
     return pieceDataFuture.get();
-}
-
-
-indicators::ProgressBar &FuseTorrent::torrentDownloadProgress()
-{
-    return m_progressBars[0];
-}
-
-indicators::ProgressBar &FuseTorrent::pieceProgress()
-{
-    return m_progressBars[1];
 }
 
 
