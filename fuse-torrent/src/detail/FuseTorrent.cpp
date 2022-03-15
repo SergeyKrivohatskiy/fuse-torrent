@@ -196,9 +196,8 @@ PieceData FuseTorrent::waitForData(
 {
     m_pieceProgress.set_option(indicators::option::Completed(false));
     m_progressBars.set_progress<1>(size_t(0));
-    while (!m_torrentHandle.have_piece(pIdx)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+    while (pieceDataFuture.wait_for(std::chrono::milliseconds(60)) !=
+            std::future_status::ready) {
         std::vector<lt::partial_piece_info> const downloadQueue =
                 m_torrentHandle.get_download_queue();
         auto it = std::find_if(downloadQueue.begin(), downloadQueue.end(),
