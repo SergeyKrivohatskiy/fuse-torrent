@@ -1,6 +1,7 @@
 #include "fuse_torrent.hpp"
 
 #include "detail/Cache.hpp"
+#include "detail/PathResolver.hpp"
 
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_info.hpp>
@@ -19,15 +20,6 @@
 
 namespace
 {
-    
-typedef std::map<std::string, std::set<std::string>> DirsMap;
-typedef std::map<std::string, int> FileToIdxMap;
-struct PathsInfo
-{
-    DirsMap dirs;
-    FileToIdxMap files;
-};
-
 
 typedef boost::shared_array<char> PieceData;
 
@@ -68,51 +60,13 @@ private:
     indicators::MultiProgress<indicators::ProgressBar, 2> m_progressBars;
     lt::session m_ltSession;
     lt::torrent_info m_torrentInfo;
-    PathsInfo m_pathMap;
+    detail::PathResolver m_pathResolver;
     lt::torrent_handle m_torrentHandle;
     std::mutex m_mutex;
     std::map<lt::piece_index_t, PieceRequest> m_pieceRequiests;
     detail::Cache<lt::piece_index_t, PieceData, 32> m_pieceCache;
     std::thread m_torrentDownloadThread;
 };
-
-
-std::vector<std::string> splitPath(std::string const &path)
-{
-    std::vector<std::string> result;
-
-    size_t lastBegin = 0;
-    for (size_t idx = 1; idx < path.size(); ++idx) {
-        if (path[idx] == '/' || path[idx] == '\\') {
-            result.push_back(path.substr(lastBegin, idx - lastBegin));
-            lastBegin = idx + 1;
-        }
-    }
-    result.push_back(path.substr(lastBegin));
-    
-    return result;
-}
-
-
-PathsInfo buildPathInfo(lt::file_storage const &fs)
-{
-    PathsInfo result;
-    for (int fIdx = 0; fIdx < fs.num_files(); ++fIdx) {
-        std::string const filePath = fs.file_path(fIdx);
-        std::vector<std::string> const components = splitPath(filePath);
-
-        std::string curPath = "/";
-        for (std::string const &component: components) {
-            result.dirs[curPath].insert(component);
-            if (curPath.back() != '/') {
-                curPath += "/";
-            }
-            curPath = curPath + component;
-        }
-        result.files.emplace(curPath, fIdx);
-    }
-    return result;
-}
 
 
 FuseTorrent::FuseTorrent(
@@ -139,7 +93,7 @@ FuseTorrent::FuseTorrent(
     m_progressBars(m_downloadProgress, m_pieceProgress),
     m_ltSession(),
     m_torrentInfo(torrentFile.generic_string()),
-    m_pathMap(buildPathInfo(m_torrentInfo.files())),
+    m_pathResolver(m_torrentInfo.files()),
     m_torrentHandle(m_ltSession.add_torrent(m_torrentInfo,
             targetDirectory.generic_string(), lt::entry(),
             lt::storage_mode_t::storage_mode_allocate)),
@@ -171,17 +125,17 @@ int FuseTorrent::getattr(const char *path, fuse_stat *stbuf)
 {
     memset(stbuf, 0, sizeof(struct fuse_stat));
     
-    if (m_pathMap.dirs.find(path) != m_pathMap.dirs.end()) {
+    if (m_pathResolver.hasDir(path)) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
         return 0;
     }
 
-    auto it = m_pathMap.files.find(path);
-    if (it != m_pathMap.files.end()) {
+    int const fIdx = m_pathResolver.fileIdx(path);
+    if (fIdx != -1) {
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
-        stbuf->st_size = m_torrentInfo.files().file_size(it->second);
+        stbuf->st_size = m_torrentInfo.files().file_size(fIdx);
         return 0;
     }
 
@@ -195,9 +149,8 @@ int FuseTorrent::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
-    auto it = m_pathMap.dirs.find(path);
-    if (it != m_pathMap.dirs.end()) {
-        for (std::string const &subPath: it->second) {
+    if (m_pathResolver.hasDir(path)) {
+        for (std::string const &subPath: m_pathResolver.dirContent(path)) {
             filler(buf, subPath.c_str(), NULL, 0);
         }
     }
@@ -208,9 +161,9 @@ int FuseTorrent::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 int FuseTorrent::open(const char *path, fuse_file_info *fi)
 {
-    auto it = m_pathMap.files.find(path);
-    if (it != m_pathMap.files.end()) {
-        fi->fh = it->second;
+    int const fIdx = m_pathResolver.fileIdx(path);
+    if (fIdx != -1) {
+        fi->fh = fIdx;
         return 0;
     }
     assert(false);
