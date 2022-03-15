@@ -68,14 +68,21 @@ int downloadTorrentWithFuseMapping(
         std::filesystem::path const &mappingDirectory)
 {
     detail::FuseTorrent fuseTorrent(torrentFile, targetDirectory);
+    
+    char arg0[] = "";
+    std::string arg1 = mappingDirectory.generic_string();
+    arg1.push_back('\0');
+    char arg2[] = "-f";
+    
+#ifndef _WIN64
+    std::filesystem::create_directories(mappingDirectory);
+#endif // _WIN64
 
-    std::string mappingDirectoryStr = mappingDirectory.generic_string();
-    mappingDirectoryStr.push_back('\0');
     int const argc = 3;
     char *argv[4];
-    argv[0] = "";
-    argv[1] = "-f";
-    argv[2] = mappingDirectoryStr.data();
+    argv[0] = arg0;
+    argv[1] = arg1.data();
+    argv[2] = arg2;
     argv[3] = nullptr;
     return fuse_main(argc, argv, &redirectOperations, &fuseTorrent);
 }

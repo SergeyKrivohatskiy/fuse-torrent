@@ -6,8 +6,13 @@ TODO
 
 # Build
 
+Project is using **Cmake** (and **conan** that runs from cmake). See example build commands
+
 ## requirenemts
 - \>= C++17 compatible compiler
+    tested with
+    - gcc9.4
+    - Visual Studio 2019
 - Cmake >= 3.16
 - [conan](https://docs.conan.io/en/latest/installation.html)
 - WinFsp (Windows only)
@@ -15,8 +20,13 @@ TODO
     - download winfsp installer
     - install `core` and `develop` winfsp components
 - FUSE (Linux/OSX only)
-    - e.g. for Centos:  `yum install fuse fuse-devel`
+    - `yum install fuse fuse-devel` for Centos
+    - `apt install fuse libfuse-dev`
+    - e.t.c
 
-## Instructions
-- clone repo
-- TODO describe cmake project build
+## Example Windows build commands:
+    git clone https://github.com/SergeyKrivohatskiy/fuse-torrent.git
+    mkdir fuse-torrent-build-dir
+    cd fuse-torrent-build-dir
+    cmake -G "Visual Studio 16 2019" ../fuse-torrent/fuse-torrent -DCMAKE_BUILD_TYPE=Release
+    cmake --build . --config Release

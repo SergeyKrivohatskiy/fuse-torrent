@@ -5,6 +5,7 @@
 #include <fuse/fuse.h>
 #ifndef _WIN64
 
+// TODO something better!?
 #define fuse_stat stat
 typedef off_t fuse_off_t;
 
