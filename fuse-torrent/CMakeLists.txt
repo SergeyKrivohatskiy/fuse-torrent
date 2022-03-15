@@ -51,8 +51,8 @@ if(WIN32)
     find_package(WinFsp REQUIRED)
     set(FUSE_LIBRARY WinFsp::WinFsp)
 else(WIN32)
-    # TODO
-    message(ERROR "FUSE library required")
+    find_package(FUSE REQUIRED)
+    set(FUSE_LIBRARY FUSE::FUSE)
 endif(WIN32)
 
 configure_file(".clang-format" ".clang-format" COPYONLY)

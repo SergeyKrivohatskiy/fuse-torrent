@@ -2,14 +2,13 @@
 #define _DETAIL_FUSE_TORRENT_HPP
 #include "Cache.hpp"
 #include "PathResolver.hpp"
+#include "fuse.hpp"
 
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_info.hpp>
 
 #include <indicators/progress_bar.hpp>
 #include <indicators/multi_progress.hpp>
-
-#include <fuse/fuse.h>
 
 #include <thread>
 #include <future>

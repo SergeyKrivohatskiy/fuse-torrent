@@ -2,6 +2,7 @@
 #define _DETAIL_CACHE_HPP
 #include <list>
 #include <cassert>
+#include <algorithm>
 
 
 namespace detail

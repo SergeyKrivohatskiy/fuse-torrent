@@ -50,7 +50,7 @@ FuseTorrent::~FuseTorrent()
 }
 
 
-int FuseTorrent::getattr(const char *path, fuse_stat *stbuf)
+int FuseTorrent::getattr(const char *path, struct fuse_stat *stbuf)
 {
     memset(stbuf, 0, sizeof(struct fuse_stat));
 
@@ -73,7 +73,7 @@ int FuseTorrent::getattr(const char *path, fuse_stat *stbuf)
 
 
 int FuseTorrent::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-        fuse_off_t off, fuse_file_info *fi)
+        fuse_off_t off, struct fuse_file_info *fi)
 {
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
@@ -88,7 +88,7 @@ int FuseTorrent::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 
-int FuseTorrent::open(const char *path, fuse_file_info *fi)
+int FuseTorrent::open(const char *path, struct fuse_file_info *fi)
 {
     int const fIdx = m_pathResolver.fileIdx(path);
     if (fIdx != -1) {
@@ -101,7 +101,7 @@ int FuseTorrent::open(const char *path, fuse_file_info *fi)
 
 
 int FuseTorrent::read(const char *path, char *buf, size_t const sizeRequested,
-        fuse_off_t const off, fuse_file_info *fi)
+        fuse_off_t const off, struct fuse_file_info *fi)
 {
     int const fIdx = static_cast<int>(fi->fh);
     lt::file_storage const &fs = m_torrentInfo.files();
