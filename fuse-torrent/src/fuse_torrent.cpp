@@ -1,5 +1,7 @@
 #include "fuse_torrent.hpp"
 
+#include "detail/Cache.hpp"
+
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -37,9 +39,6 @@ struct PieceRequest
 };
 
 
-size_t MAX_CACHE_SIZE = 16;
-
-
 class FuseTorrent
 {
 public:
@@ -73,7 +72,7 @@ private:
     lt::torrent_handle m_torrentHandle;
     std::mutex m_mutex;
     std::map<lt::piece_index_t, PieceRequest> m_pieceRequiests;
-    std::deque<std::pair<lt::piece_index_t, PieceData>> m_pieceCache;
+    detail::Cache<lt::piece_index_t, PieceData, 32> m_pieceCache;
     std::thread m_torrentDownloadThread;
 };
 
@@ -285,20 +284,11 @@ void FuseTorrent::torrentDownloadCycle()
 
 PieceData FuseTorrent::loadWithCache(lt::piece_index_t const pIdx)
 {
-    auto it = std::find_if(m_pieceCache.begin(), m_pieceCache.end(),
-            [pIdx](std::pair<lt::piece_index_t, PieceData> const &p)
-            {
-                return p.first == pIdx;
-            });
-    if (it == m_pieceCache.end()) {
-        if (m_pieceCache.size() == MAX_CACHE_SIZE) {
-            m_pieceCache.pop_front();
-        }
-        return m_pieceCache.emplace_back(pIdx, loadFromTorrent(pIdx)).second;
+    PieceData const *value = m_pieceCache.get(pIdx);
+    if (value) {
+        return *value;
     }
-    std::pair<lt::piece_index_t, PieceData> const value = *it;
-    m_pieceCache.erase(it);
-    return m_pieceCache.emplace_back(value).second;
+    return m_pieceCache.insert(pIdx, loadFromTorrent(pIdx));
 }
 
 
