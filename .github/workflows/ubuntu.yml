@@ -21,7 +21,7 @@ jobs:
           python3 -m pip install conan
 
       - name: Configure cmake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+        run: cd fuse-torrent && cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
         
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config Release
