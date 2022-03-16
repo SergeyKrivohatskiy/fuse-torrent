@@ -1,3 +1,5 @@
+[![Build on Ubuntu](https://github.com/SergeyKrivohatskiy/fuse-torrent/actions/workflows/ubuntu.yml/badge.svg?branch=master)](https://github.com/SergeyKrivohatskiy/fuse-torrent/actions/workflows/ubuntu.yml)
+
 # FuseTorrent
 A simple command line torrent client with FUSE file mapping
 
@@ -53,3 +55,6 @@ Project is using **Cmake** (and **conan** that runs from cmake). See example bui
     cd fuse-torrent-build-dir
     cmake -G "Visual Studio 16 2019" ../fuse-torrent/fuse-torrent -DCMAKE_BUILD_TYPE=Release
     cmake --build . --config Release
+    
+## Example Ubuntu build:
+see [ubuntu.yml workflow](.github/workflows/ubuntu.yml)
