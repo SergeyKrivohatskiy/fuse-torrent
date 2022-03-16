@@ -1,0 +1,30 @@
+name: Build on Ubuntu
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install requirements
+        run: |
+          apt install -y libfuse-dev gcc cmake python3 python3-pip
+          python3 -m pip install conan
+
+      - name: Configure cmake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+        
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release
+        
+      - name: Check help
+        run: ${{github.workspace}}/build/bin/FuseTorrent --help
