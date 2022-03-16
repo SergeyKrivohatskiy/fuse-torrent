@@ -3,6 +3,8 @@
 # FuseTorrent
 A simple command line torrent client with FUSE file mapping
 
+![FuseTorrent in action](FuseTorrent.gif)
+
 # Usage
 ### Interface
     A minimal torrent client that, in addition to just downloading a torrent, allows using any file from the torrent before fully downloading via a virtual file system
