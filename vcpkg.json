@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "fuse-torrent",
+  "version": "0.2.0",
+  "description": "A command line torrent client with FUSE file mapping",
+  "homepage": "https://github.com/SergeyKrivohatskiy/fuse-torrent",
+  "license": "MIT",
+  "builtin-baseline": "118bba14b94bc040c098c0c15e63c142148c05ca",
+  "dependencies": [
+    {
+      "name": "libtorrent",
+      "default-features": false
+    },
+    "cli11",
+    "indicators"
+  ]
+}

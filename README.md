@@ -1,13 +1,15 @@
-[![Build on Ubuntu](https://github.com/SergeyKrivohatskiy/fuse-torrent/actions/workflows/ubuntu.yml/badge.svg?branch=master)](https://github.com/SergeyKrivohatskiy/fuse-torrent/actions/workflows/ubuntu.yml)
+[![CI](https://github.com/SergeyKrivohatskiy/fuse-torrent/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/SergeyKrivohatskiy/fuse-torrent/actions/workflows/ci.yml)
 
 # FuseTorrent
+
 A simple command line torrent client with FUSE file mapping
 
 ![FuseTorrent in action](FuseTorrent.gif)
 
-# Usage
-### Interface
-    A minimal torrent client that, in addition to just downloading a torrent, allows using any file from the torrent before fully downloading via a virtual file system
+## Usage
+
+    A minimal torrent client that, in addition to just downloading a torrent, allows
+    using any file from the torrent before fully downloading via a virtual file system
     Usage: FuseTorrent [OPTIONS] torrent_file target_diretory mapping_diretory
 
     Positionals:
@@ -22,41 +24,46 @@ A simple command line torrent client with FUSE file mapping
       -h,--help                   Print this help message and exit
       --clear                     crear target directory
 
+### Runtime requirements
 
-### requirenemts Linux
-- FUSE module should be available (e.g. running from windows docker doesn't work)
+- **Linux**: the FUSE kernel module has to be available (running inside a Windows
+  Docker container, for example, does not work).
+- **Windows**: [WinFsp](https://winfsp.dev/rel/) has to be installed (the `core`
+  component is enough). `winfsp-x64.dll` (installed to
+  `C:\Program Files (x86)\WinFsp\bin`) has to be in `$PATH`, or copied next to
+  `FuseTorrent.exe`.
 
-### requirenemts Windows
-- [WinFsp](https://winfsp.dev/rel/) should be installed (at least `core` component is required)
-- `winfsp-x64.dll` (installed to `C:\Program Files (x86)\WinFsp\bin`) should be in `$PATH`
-    - alternatively copy `winfsp-x64.dll` next to `FuseTorrent.exe`
+## Build
 
-# Build
+The project is built with CMake and takes its dependencies from
+[vcpkg](https://vcpkg.io) in manifest mode, so `vcpkg.json` is the single source
+of truth for what is needed. The dependency versions are pinned by
+`builtin-baseline`, which makes a checkout reproduce the same dependency set.
 
-Project is using **Cmake** (and **conan** that runs from cmake). See example build commands
+### Build requirements
 
-### requirenemts
-- \>= C++17 compatible compiler
-    tested with
-    - gcc9.4
-    - Visual Studio 2019
-- Cmake >= 3.16
-- [conan](https://docs.conan.io/en/latest/installation.html)
-- WinFsp (Windows only)
-    - go to [winfsp](https://winfsp.dev/rel/) website
-    - download winfsp installer
-    - install `core` and `develop` winfsp components
-- FUSE (Linux/OSX only)
-    - `yum install fuse-devel` for Centos
-    - `apt install libfuse-dev` for Ubuntu
-    - e.t.c
+- a C++20 compiler (tested with gcc 11 and MSVC 19.3x)
+- CMake >= 3.21 and Ninja
+- [vcpkg](https://vcpkg.io/en/getting-started), with `VCPKG_ROOT` pointing at it
+- **Linux**: `libfuse-dev` and `pkg-config`
+  (`apt install libfuse-dev pkg-config` on Debian/Ubuntu)
+- **Windows**: [WinFsp](https://winfsp.dev/rel/) with the `develop` component
 
-## Example Windows build commands:
+### Build commands
+
     git clone https://github.com/SergeyKrivohatskiy/fuse-torrent.git
-    mkdir fuse-torrent-build-dir
-    cd fuse-torrent-build-dir
-    cmake -G "Visual Studio 16 2019" ../fuse-torrent/fuse-torrent -DCMAKE_BUILD_TYPE=Release
-    cmake --build . --config Release
-    
-## Example Ubuntu build:
-see [ubuntu.yml workflow](.github/workflows/ubuntu.yml)
+    cd fuse-torrent
+    export VCPKG_ROOT=/path/to/vcpkg
+    cmake --preset release
+    cmake --build --preset release
+
+The binary is written to `build/release/FuseTorrent`. The first configure builds
+every dependency from source and takes a while; later ones reuse the vcpkg
+binary cache. A `debug` preset is available as well.
+
+See [the CI workflow](.github/workflows/ci.yml) for a build that starts from a
+bare Ubuntu machine.
+
+## License
+
+[MIT](LICENSE)

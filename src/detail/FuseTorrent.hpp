@@ -7,6 +7,8 @@
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_info.hpp>
 
+#include <memory>
+
 #include <indicators/progress_bar.hpp>
 #include <indicators/multi_progress.hpp>
 
@@ -64,8 +66,8 @@ private:
     indicators::MultiProgress<indicators::ProgressBar, 2> m_progressBars;
 
     lt::session m_ltSession;
-    lt::torrent_info m_torrentInfo;
     lt::torrent_handle m_torrentHandle;
+    std::shared_ptr<lt::torrent_info const> m_torrentInfo;
 
     detail::PathResolver m_pathResolver;
 
