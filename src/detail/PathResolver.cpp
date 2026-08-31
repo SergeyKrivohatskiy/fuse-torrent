@@ -1,6 +1,7 @@
 #include "PathResolver.hpp"
 
 #include <cassert>
+#include <vector>
 
 
 namespace detail
@@ -12,15 +13,16 @@ PathResolver::PathResolver(lt::file_storage const &fs):
 }
 
 
-bool PathResolver::hasDir(const char *path) const
+bool PathResolver::hasDir(std::string_view const path) const
 {
     return m_pathInfo.dirs.find(path) != m_pathInfo.dirs.end();
 }
 
 
-std::optional<lt::file_index_t> PathResolver::fileIdx(const char *path) const
+std::optional<lt::file_index_t> PathResolver::fileIdx(
+        std::string_view const path) const
 {
-    auto it = m_pathInfo.files.find(path);
+    auto const it = m_pathInfo.files.find(path);
     if (it == m_pathInfo.files.end()) {
         return std::nullopt;
     }
@@ -28,7 +30,8 @@ std::optional<lt::file_index_t> PathResolver::fileIdx(const char *path) const
 }
 
 
-PathResolver::Files const &PathResolver::dirContent(const char *path) const
+PathResolver::Files const &PathResolver::dirContent(
+        std::string_view const path) const
 {
     assert(hasDir(path));
     return m_pathInfo.dirs.find(path)->second;
@@ -42,23 +45,22 @@ std::vector<std::string> splitPath(std::string const &path)
 {
     std::vector<std::string> result;
 
-    size_t lastBegin = 0;
-    for (size_t idx = 1; idx < path.size(); ++idx) {
+    std::size_t lastBegin = 0;
+    for (std::size_t idx = 1; idx < path.size(); ++idx) {
         if (path[idx] == '/' || path[idx] == '\\') {
             result.push_back(path.substr(lastBegin, idx - lastBegin));
             lastBegin = idx + 1;
         }
     }
     result.push_back(path.substr(lastBegin));
-    
+
     return result;
 }
 
-}
+} // namespace
 
 
-PathResolver::PathsInfo PathResolver::buildPathInfo(
-        lt::file_storage const &fs)
+PathResolver::PathsInfo PathResolver::buildPathInfo(lt::file_storage const &fs)
 {
     PathsInfo result;
     for (lt::file_index_t const fIdx: fs.file_range()) {
@@ -71,7 +73,7 @@ PathResolver::PathsInfo PathResolver::buildPathInfo(
             if (curPath.back() != '/') {
                 curPath += "/";
             }
-            curPath = curPath + component;
+            curPath += component;
         }
         result.files.emplace(curPath, fIdx);
     }
@@ -79,4 +81,3 @@ PathResolver::PathsInfo PathResolver::buildPathInfo(
 }
 
 } // namespace detail
-// namespace detail

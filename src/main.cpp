@@ -2,6 +2,7 @@
 
 #include <CLI/CLI.hpp>
 
+#include <exception>
 #include <filesystem>
 #include <iostream>
 
@@ -22,23 +23,23 @@ int main(int argc, char *argv[])
 
     std::filesystem::path targetDirectory;
     app.add_option(
-            "target_diretory", targetDirectory,
+            "target_directory", targetDirectory,
             "directory where torrent files will be downloaded to")
                     ->required();
 
     std::filesystem::path mappingDirectory;
     app.add_option(
-            "mapping_diretory", mappingDirectory,
+            "mapping_directory", mappingDirectory,
             "a directory where a virtual file system will be mounted")
                     ->required()
                     ->check(CLI::NonexistentPath);
 
     bool clearTargetDirectory = false;
-    app.add_flag("--clear", clearTargetDirectory, "crear target directory");
+    app.add_flag("--clear", clearTargetDirectory, "clear the target directory before downloading");
 
     try {
         app.parse(argc, argv);
-    } catch (const CLI::ParseError &e) {
+    } catch (CLI::ParseError const &e) {
         return app.exit(e);
     }
 

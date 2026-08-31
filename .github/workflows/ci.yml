@@ -9,7 +9,6 @@ on:
 
 env:
   VCPKG_BASELINE: 118bba14b94bc040c098c0c15e63c142148c05ca
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
 jobs:
   build:
@@ -18,13 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-
-      - name: Export GitHub Actions cache environment
-        uses: actions/github-script@v9
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Install build requirements
         run: |
@@ -37,6 +29,15 @@ jobs:
           repository: microsoft/vcpkg
           ref: ${{ env.VCPKG_BASELINE }}
           path: vcpkg
+
+      - name: Cache vcpkg build artifacts
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ env.VCPKG_BASELINE }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ env.VCPKG_BASELINE }}-
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Bootstrap vcpkg
         run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics

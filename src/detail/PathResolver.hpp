@@ -1,11 +1,13 @@
-#ifndef _DETAIL_PATH_RESOLVER_HPP
-#define _DETAIL_PATH_RESOLVER_HPP
+#ifndef FUSE_TORRENT_DETAIL_PATH_RESOLVER_HPP
+#define FUSE_TORRENT_DETAIL_PATH_RESOLVER_HPP
 #include <libtorrent/file_storage.hpp>
 
+#include <functional>
 #include <map>
 #include <optional>
-#include <string>
 #include <set>
+#include <string>
+#include <string_view>
 
 
 namespace detail
@@ -14,20 +16,21 @@ namespace detail
 class PathResolver
 {
 public:
-    typedef std::set<std::string> Files;
+    using Files = std::set<std::string>;
 
 public:
-    PathResolver(lt::file_storage const &fs);
-    
-    bool hasDir(const char *path) const;
+    explicit PathResolver(lt::file_storage const &fs);
 
-    std::optional<lt::file_index_t> fileIdx(const char *path) const;
+    [[nodiscard]] bool hasDir(std::string_view path) const;
 
-    Files const &dirContent(const char *path) const;
+    [[nodiscard]] std::optional<lt::file_index_t> fileIdx(
+            std::string_view path) const;
+
+    [[nodiscard]] Files const &dirContent(std::string_view path) const;
 
 private:
-    typedef std::map<std::string, std::set<std::string>> DirsMap;
-    typedef std::map<std::string, lt::file_index_t> FileToIdxMap;
+    using DirsMap = std::map<std::string, Files, std::less<>>;
+    using FileToIdxMap = std::map<std::string, lt::file_index_t, std::less<>>;
     struct PathsInfo
     {
         DirsMap dirs;
@@ -41,7 +44,6 @@ private:
     PathsInfo m_pathInfo;
 };
 
-}
-// namespace detail
+} // namespace detail
 
-#endif // _DETAIL_PATH_RESOLVER_HPP
+#endif // FUSE_TORRENT_DETAIL_PATH_RESOLVER_HPP
