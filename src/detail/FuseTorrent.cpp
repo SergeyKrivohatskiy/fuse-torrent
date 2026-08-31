@@ -24,7 +24,7 @@ lt::add_torrent_params loadAddTorrentParams(
     lt::add_torrent_params params =
             lt::load_torrent_file(torrentFile.generic_string());
     params.save_path = targetDirectory.generic_string();
-    params.storage_mode = lt::storage_mode_allocate;
+    params.storage_mode = lt::storage_mode_sparse;
     return params;
 }
 
