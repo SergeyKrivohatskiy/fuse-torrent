@@ -61,7 +61,8 @@ of truth for what is needed. The dependency versions are pinned by
     cmake --preset release
     cmake --build --preset release
 
-The binary is written to `build/release/FuseTorrent`. The first configure builds
+The binary is written to `build/release/FuseTorrent`, and `ctest --preset
+release` runs the unit tests. The first configure builds
 every dependency from source and takes a while; later ones reuse the vcpkg
 binary cache. A `debug` preset is available as well.
 

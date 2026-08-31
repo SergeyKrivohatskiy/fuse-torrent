@@ -13,5 +13,13 @@
     },
     "cli11",
     "indicators"
-  ]
+  ],
+  "features": {
+    "tests": {
+      "description": "Build the unit tests",
+      "dependencies": [
+        "catch2"
+      ]
+    }
+  }
 }
