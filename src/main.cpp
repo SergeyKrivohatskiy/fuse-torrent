@@ -42,15 +42,19 @@ int main(int argc, char *argv[])
         return app.exit(e);
     }
 
-    if (clearTargetDirectory) {
-        std::filesystem::remove_all(targetDirectory);
-    } else {
-        if (std::filesystem::exists(targetDirectory)) {
-            std::cerr << "target_directory\"" << targetDirectory << "\" should not exist";
-            return -1;
+    try {
+        if (clearTargetDirectory) {
+            std::filesystem::remove_all(targetDirectory);
+        } else if (std::filesystem::exists(targetDirectory)) {
+            std::cerr << "target_directory " << targetDirectory
+                      << " should not exist\n";
+            return 1;
         }
+
+        return downloadTorrentWithFuseMapping(
+                torrentFile, targetDirectory, mappingDirectory);
+    } catch (std::exception const &e) {
+        std::cerr << "FuseTorrent failed: " << e.what() << "\n";
+        return 1;
     }
-    
-    return downloadTorrentWithFuseMapping(
-            torrentFile, targetDirectory, mappingDirectory);
 }
