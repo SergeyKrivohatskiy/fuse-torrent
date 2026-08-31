@@ -18,11 +18,11 @@ bool PathResolver::hasDir(const char *path) const
 }
 
 
-int PathResolver::fileIdx(const char *path) const
+std::optional<lt::file_index_t> PathResolver::fileIdx(const char *path) const
 {
     auto it = m_pathInfo.files.find(path);
     if (it == m_pathInfo.files.end()) {
-        return -1;
+        return std::nullopt;
     }
     return it->second;
 }
@@ -61,7 +61,7 @@ PathResolver::PathsInfo PathResolver::buildPathInfo(
         lt::file_storage const &fs)
 {
     PathsInfo result;
-    for (int fIdx = 0; fIdx < fs.num_files(); ++fIdx) {
+    for (lt::file_index_t const fIdx: fs.file_range()) {
         std::string const filePath = fs.file_path(fIdx);
         std::vector<std::string> const components = splitPath(filePath);
 

@@ -2,7 +2,7 @@
 #define _DETAIL_FUSE_TYPES_HPP
 // Maps fuse types between fuse and winfsp interfaces
 #define FUSE_USE_VERSION 26
-#include <fuse/fuse.h>
+#include <fuse.h>
 #ifndef _WIN64
 
 // TODO something better!?

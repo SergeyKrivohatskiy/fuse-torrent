@@ -2,6 +2,9 @@
 
 #include <CLI/CLI.hpp>
 
+#include <filesystem>
+#include <iostream>
+
 
 int main(int argc, char *argv[])
 {

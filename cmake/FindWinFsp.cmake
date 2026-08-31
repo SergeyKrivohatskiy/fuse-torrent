@@ -36,6 +36,6 @@ if(WinFsp_FOUND AND NOT TARGET WinFsp::WinFsp)
     set_target_properties(WinFsp::WinFsp PROPERTIES
         IMPORTED_LOCATION "${WinFsp_LIBRARY}"
         IMPORTED_IMPLIB "${WinFsp_IMPLIB}"
-        INTERFACE_INCLUDE_DIRECTORIES "${WinFsp_INCLUDE_DIR}"
+        INTERFACE_INCLUDE_DIRECTORIES "${WinFsp_INCLUDE_DIR};${WinFsp_INCLUDE_DIR}/fuse"
     )
 endif()
