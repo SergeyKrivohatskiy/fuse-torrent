@@ -9,20 +9,24 @@ A simple command line torrent client with FUSE file mapping
 ## Usage
 
     A minimal torrent client that, in addition to just downloading a torrent, allows
-    using any file from the torrent before fully downloading via a virtual file system
-    Usage: FuseTorrent [OPTIONS] torrent_file target_diretory mapping_diretory
+    using any file from the torrent before fully downloading via a virtual file
+    system
 
-    Positionals:
+
+    FuseTorrent [OPTIONS] torrent_file target_directory mapping_directory
+
+
+    POSITIONALS:
       torrent_file TEXT:FILE REQUIRED
                                   '.torrent' file to download
-      target_diretory TEXT REQUIRED
+      target_directory TEXT REQUIRED
                                   directory where torrent files will be downloaded to
-      mapping_diretory TEXT:PATH(non-existing) REQUIRED
+      mapping_directory TEXT:PATH(non-existing) REQUIRED
                                   a directory where a virtual file system will be mounted
 
-    Options:
-      -h,--help                   Print this help message and exit
-      --clear                     crear target directory
+    OPTIONS:
+      -h,     --help              Print this help message and exit
+              --clear             clear the target directory before downloading
 
 ### Runtime requirements
 

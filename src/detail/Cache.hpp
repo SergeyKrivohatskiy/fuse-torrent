@@ -1,18 +1,18 @@
-#ifndef _DETAIL_CACHE_HPP
-#define _DETAIL_CACHE_HPP
-#include <list>
+#ifndef FUSE_TORRENT_DETAIL_CACHE_HPP
+#define FUSE_TORRENT_DETAIL_CACHE_HPP
 #include <algorithm>
+#include <cstddef>
+#include <list>
+#include <utility>
 
 
 namespace detail
 {
 
-template<class Key, class Value, size_t CAPACITY>
+template<class Key, class Value, std::size_t CAPACITY>
 class Cache
 {
 public:
-    Cache();
-
     Value *get(Key key);
     Value &insert(Key key, Value value);
 
@@ -21,20 +21,13 @@ private:
 };
 
 
-template<class Key, class Value, size_t CAPACITY>
-Cache<Key, Value, CAPACITY>::Cache():
-    m_data()
+template<class Key, class Value, std::size_t CAPACITY>
+Value *Cache<Key, Value, CAPACITY>::get(Key const key)
 {
-}
-
-
-template<class Key, class Value, size_t CAPACITY>
-Value *Cache<Key, Value, CAPACITY>::get(Key key)
-{
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-            [key](std::pair<Key, Value> const &p)
+    auto const it = std::ranges::find_if(m_data,
+            [key](std::pair<Key, Value> const &entry)
             {
-                return p.first == key;
+                return entry.first == key;
             });
     if (it == m_data.end()) {
         return nullptr;
@@ -46,7 +39,7 @@ Value *Cache<Key, Value, CAPACITY>::get(Key key)
 }
 
 
-template<class Key, class Value, size_t CAPACITY>
+template<class Key, class Value, std::size_t CAPACITY>
 Value &Cache<Key, Value, CAPACITY>::insert(Key key, Value value)
 {
     if (Value *const present = get(key)) {
@@ -59,7 +52,6 @@ Value &Cache<Key, Value, CAPACITY>::insert(Key key, Value value)
     return m_data.emplace_back(std::move(key), std::move(value)).second;
 }
 
-}
-// namespace detail
+} // namespace detail
 
-#endif // _DETAIL_CACHE_HPP
+#endif // FUSE_TORRENT_DETAIL_CACHE_HPP

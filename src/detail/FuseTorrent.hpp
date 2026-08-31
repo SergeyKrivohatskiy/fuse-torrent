@@ -1,5 +1,5 @@
-#ifndef _DETAIL_FUSE_TORRENT_HPP
-#define _DETAIL_FUSE_TORRENT_HPP
+#ifndef FUSE_TORRENT_DETAIL_FUSE_TORRENT_HPP
+#define FUSE_TORRENT_DETAIL_FUSE_TORRENT_HPP
 #include "Cache.hpp"
 #include "PathResolver.hpp"
 #include "fuse.hpp"
@@ -7,22 +7,25 @@
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_info.hpp>
 
-#include <memory>
+#include <boost/shared_array.hpp>
 
-#include <indicators/progress_bar.hpp>
 #include <indicators/multi_progress.hpp>
+#include <indicators/progress_bar.hpp>
 
-#include <thread>
-#include <future>
-#include <mutex>
+#include <cstddef>
 #include <filesystem>
+#include <future>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <stop_token>
+#include <thread>
 
 
 namespace detail
 {
 
-typedef boost::shared_array<char> PieceData;
+using PieceData = boost::shared_array<char>;
 
 
 struct PieceRequest
@@ -40,13 +43,15 @@ public:
             std::filesystem::path const &targetDirectory);
     ~FuseTorrent();
 
-    int getattr(const char *path, struct fuse_stat *stbuf);
-    int readdir(
-            const char *path, void *buf, fuse_fill_dir_t filler,
-            fuse_off_t off, struct fuse_file_info *fi);
-    int open(const char *path, struct fuse_file_info *);
-    int read(const char *path, char *buf, size_t size, fuse_off_t off,
-            struct fuse_file_info *fi);
+    FuseTorrent(FuseTorrent const &) = delete;
+    FuseTorrent &operator=(FuseTorrent const &) = delete;
+
+    int getattr(char const *path, fuse_stat *stbuf);
+    int readdir(char const *path, void *buf, fuse_fill_dir_t filler,
+            fuse_off_t off, fuse_file_info *fi);
+    int open(char const *path, fuse_file_info *fi);
+    int read(char const *path, char *buf, std::size_t size, fuse_off_t off,
+            fuse_file_info *fi);
 
 private:
     void torrentDownloadCycle(std::stop_token stopToken);
@@ -65,6 +70,9 @@ private:
     void updateTorrentDownloadProgress();
 
 private:
+    static constexpr std::size_t PIECE_CACHE_CAPACITY = 32;
+
+private:
     indicators::ProgressBar m_downloadProgress;
     indicators::ProgressBar m_pieceProgress;
     indicators::MultiProgress<indicators::ProgressBar, 2> m_progressBars;
@@ -73,7 +81,7 @@ private:
     lt::torrent_handle m_torrentHandle;
     std::shared_ptr<lt::torrent_info const> m_torrentInfo;
 
-    detail::PathResolver m_pathResolver;
+    PathResolver m_pathResolver;
 
     std::mutex m_progressMutex;
 
@@ -81,12 +89,11 @@ private:
     std::map<lt::piece_index_t, PieceRequest> m_pieceRequests;
 
     std::mutex m_pieceCacheMutex;
-    detail::Cache<lt::piece_index_t, PieceData, 32> m_pieceCache;
+    Cache<lt::piece_index_t, PieceData, PIECE_CACHE_CAPACITY> m_pieceCache;
 
     std::jthread m_torrentDownloadThread;
 };
 
-}
-// namespace detail
+} // namespace detail
 
-#endif // _DETAIL_FUSE_TORRENT_HPP
+#endif // FUSE_TORRENT_DETAIL_FUSE_TORRENT_HPP

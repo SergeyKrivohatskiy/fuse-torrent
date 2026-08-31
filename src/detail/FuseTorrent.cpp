@@ -4,7 +4,11 @@
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/load_torrent.hpp>
 
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
+#include <utility>
+#include <vector>
 
 
 namespace detail
@@ -24,8 +28,7 @@ lt::add_torrent_params loadAddTorrentParams(
     return params;
 }
 
-}
-// namespace
+} // namespace
 
 
 FuseTorrent::FuseTorrent(std::filesystem::path const &torrentFile,
@@ -43,17 +46,10 @@ FuseTorrent::FuseTorrent(std::filesystem::path const &torrentFile,
             indicators::option::ShowPercentage(true),
             indicators::option::PostfixText("piece request processing")),
     m_progressBars(m_downloadProgress, m_pieceProgress),
-    m_ltSession(),
     m_torrentHandle(m_ltSession.add_torrent(
             loadAddTorrentParams(torrentFile, targetDirectory))),
     m_torrentInfo(m_torrentHandle.torrent_file()),
-    m_pathResolver(m_torrentInfo->layout()),
-    m_progressMutex(),
-    m_pieceRequestsMutex(),
-    m_pieceRequests(),
-    m_pieceCacheMutex(),
-    m_pieceCache(),
-    m_torrentDownloadThread()
+    m_pathResolver(m_torrentInfo->layout())
 {
     m_pieceProgress.set_progress(100);
     for (lt::piece_index_t const idx: m_torrentInfo->layout().piece_range()) {
@@ -72,9 +68,9 @@ FuseTorrent::~FuseTorrent()
 }
 
 
-int FuseTorrent::getattr(const char *path, struct fuse_stat *stbuf)
+int FuseTorrent::getattr(const char *path, fuse_stat *stbuf)
 {
-    memset(stbuf, 0, sizeof(struct fuse_stat));
+    std::memset(stbuf, 0, sizeof(fuse_stat));
 
     if (m_pathResolver.hasDir(path)) {
         stbuf->st_mode = S_IFDIR | 0755;
@@ -95,7 +91,7 @@ int FuseTorrent::getattr(const char *path, struct fuse_stat *stbuf)
 
 
 int FuseTorrent::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-        fuse_off_t, struct fuse_file_info *)
+        fuse_off_t, fuse_file_info *)
 {
     if (!m_pathResolver.hasDir(path)) {
         return -ENOENT;
@@ -111,7 +107,7 @@ int FuseTorrent::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 
-int FuseTorrent::open(const char *path, struct fuse_file_info *fi)
+int FuseTorrent::open(const char *path, fuse_file_info *fi)
 {
     std::optional<lt::file_index_t> const fIdx = m_pathResolver.fileIdx(path);
     if (!fIdx) {
@@ -120,13 +116,13 @@ int FuseTorrent::open(const char *path, struct fuse_file_info *fi)
     if ((fi->flags & O_ACCMODE) != O_RDONLY) {
         return -EACCES;
     }
-    fi->fh = static_cast<uint64_t>(static_cast<int>(*fIdx));
+    fi->fh = static_cast<std::uint64_t>(static_cast<int>(*fIdx));
     return 0;
 }
 
 
-int FuseTorrent::read(const char *, char *buf, size_t const sizeRequested,
-        fuse_off_t const off, struct fuse_file_info *fi)
+int FuseTorrent::read(const char *, char *buf, std::size_t const sizeRequested,
+        fuse_off_t const off, fuse_file_info *fi)
 {
     lt::file_index_t const fIdx(static_cast<int>(fi->fh));
     lt::file_storage const &fs = m_torrentInfo->layout();
@@ -169,7 +165,7 @@ int FuseTorrent::readFromPiece(char *buf, lt::peer_request const &peerRequest)
     int const availableInPiece =
             m_torrentInfo->piece_size(peerRequest.piece) - peerRequest.start;
     int const bytes = std::min(peerRequest.length, availableInPiece);
-    memcpy(buf, data.get() + peerRequest.start, static_cast<size_t>(bytes));
+    std::memcpy(buf, data.get() + peerRequest.start, static_cast<std::size_t>(bytes));
     return bytes;
 }
 
@@ -260,25 +256,25 @@ PieceData FuseTorrent::waitForData(
     {
         std::scoped_lock<std::mutex> lock(m_progressMutex);
         m_pieceProgress.set_option(indicators::option::Completed(false));
-        m_progressBars.set_progress<1>(size_t(0));
+        m_progressBars.set_progress<1>(std::size_t{0});
     }
     while (pieceDataFuture.wait_for(std::chrono::milliseconds(60)) !=
             std::future_status::ready) {
         std::vector<lt::partial_piece_info> const downloadQueue =
                 m_torrentHandle.get_download_queue();
-        auto it = std::find_if(downloadQueue.begin(), downloadQueue.end(),
-                [pIdx](lt::partial_piece_info const &pi) {
-                    return pi.piece_index == pIdx;
+        auto const it = std::ranges::find_if(downloadQueue,
+                [pIdx](lt::partial_piece_info const &pieceInfo) {
+                    return pieceInfo.piece_index == pIdx;
                 });
         if (it != downloadQueue.end()) {
-            size_t const progress = it->finished * 100 / it->blocks_in_piece;
+            std::size_t const progress = it->finished * 100 / it->blocks_in_piece;
             std::scoped_lock<std::mutex> lock(m_progressMutex);
             m_progressBars.set_progress<1>(progress);
         }
     }
     {
         std::scoped_lock<std::mutex> lock(m_progressMutex);
-        m_progressBars.set_progress<1>(size_t(100));
+        m_progressBars.set_progress<1>(std::size_t{100});
     }
 
     return pieceDataFuture.get();
@@ -311,8 +307,7 @@ void FuseTorrent::updateTorrentDownloadProgress()
             m_torrentHandle.status(lt::status_flags_t());
     std::scoped_lock<std::mutex> lock(m_progressMutex);
     m_progressBars.set_progress<0>(
-            static_cast<size_t>(status.progress * 100));
+            static_cast<std::size_t>(status.progress * 100));
 }
 
-}
-// namespace detail
+} // namespace detail

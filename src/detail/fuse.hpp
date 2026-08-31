@@ -1,16 +1,14 @@
-#ifndef _DETAIL_FUSE_TYPES_HPP
-#define _DETAIL_FUSE_TYPES_HPP
-// Maps fuse types between fuse and winfsp interfaces
+#ifndef FUSE_TORRENT_DETAIL_FUSE_HPP
+#define FUSE_TORRENT_DETAIL_FUSE_HPP
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
+
 #ifndef _WIN64
+#include <sys/stat.h>
+#include <sys/types.h>
 
-// TODO something better!?
-#define fuse_stat stat
-typedef off_t fuse_off_t;
-
+using fuse_stat = struct stat;
+using fuse_off_t = off_t;
 #endif // !_WIN64
 
-
-
-#endif // _DETAIL_FUSE_TYPES_HPP
+#endif // FUSE_TORRENT_DETAIL_FUSE_HPP
