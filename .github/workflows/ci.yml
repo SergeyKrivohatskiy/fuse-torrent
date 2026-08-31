@@ -50,5 +50,8 @@ jobs:
       - name: Build
         run: cmake --build --preset release
 
+      - name: Test
+        run: ctest --preset release
+
       - name: Check help
         run: ./build/release/FuseTorrent --help

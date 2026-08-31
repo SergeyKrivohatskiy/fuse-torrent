@@ -8,6 +8,8 @@ project(FuseTorrent
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+option(FUSE_TORRENT_BUILD_TESTS "Build the unit tests" OFF)
+
 find_package(LibtorrentRasterbar CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(indicators CONFIG REQUIRED)
@@ -53,3 +55,8 @@ endif()
 
 include(GNUInstallDirs)
 install(TARGETS FuseTorrent RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+if(FUSE_TORRENT_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
