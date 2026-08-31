@@ -12,6 +12,7 @@
 #include <indicators/multi_progress.hpp>
 #include <indicators/progress_bar.hpp>
 
+#include <chrono>
 #include <cstddef>
 #include <filesystem>
 #include <future>
@@ -35,6 +36,13 @@ struct PieceRequest
 };
 
 
+struct PieceReadResult
+{
+    PieceData data;
+    int error;
+};
+
+
 class FuseTorrent
 {
 public:
@@ -46,6 +54,7 @@ public:
     FuseTorrent(FuseTorrent const &) = delete;
     FuseTorrent &operator=(FuseTorrent const &) = delete;
 
+    void *init(fuse_conn_info *conn);
     int getattr(char const *path, fuse_stat *stbuf);
     int readdir(char const *path, void *buf, fuse_fill_dir_t filler,
             fuse_off_t off, fuse_file_info *fi);
@@ -57,10 +66,10 @@ private:
     void torrentDownloadCycle(std::stop_token stopToken);
     void failPendingPieceRequests();
 
-    PieceData loadWithCache(lt::piece_index_t pIdx);
-    PieceData loadFromTorrent(lt::piece_index_t pIdx);
+    PieceReadResult loadWithCache(lt::piece_index_t pIdx);
+    PieceReadResult loadFromTorrent(lt::piece_index_t pIdx);
     std::shared_future<PieceData> placePieceRequest(lt::piece_index_t pIdx);
-    PieceData waitForData(lt::piece_index_t pIdx,
+    PieceReadResult waitForData(lt::piece_index_t pIdx,
             std::shared_future<PieceData> pieceDataFuture);
 
     int readFromPiece(char *buf, lt::peer_request const &peerRequest);
@@ -71,6 +80,9 @@ private:
 
 private:
     static constexpr std::size_t PIECE_CACHE_CAPACITY = 32;
+    static constexpr std::chrono::seconds PIECE_READ_TIMEOUT{60};
+    static constexpr std::chrono::milliseconds PIECE_WAIT_POLL_INTERVAL{60};
+    static constexpr unsigned MAX_BACKGROUND_REQUESTS = 64;
 
 private:
     indicators::ProgressBar m_downloadProgress;

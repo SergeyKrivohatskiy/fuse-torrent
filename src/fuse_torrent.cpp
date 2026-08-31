@@ -22,6 +22,12 @@ detail::FuseTorrent *fuseTorrentFromContext()
 extern "C"
 {
 
+static void *fuseTorrentRedirectInit(fuse_conn_info *conn)
+{
+    return fuseTorrentFromContext()->init(conn);
+}
+
+
 static int fuseTorrentRedirectGetattr(char const *path, fuse_stat *stbuf)
 {
     return fuseTorrentFromContext()->getattr(path, stbuf);
@@ -56,6 +62,7 @@ namespace
 fuse_operations initOperations()
 {
     fuse_operations operations = {};
+    operations.init = fuseTorrentRedirectInit;
     operations.getattr = fuseTorrentRedirectGetattr;
     operations.readdir = fuseTorrentRedirectReaddir;
     operations.open = fuseTorrentRedirectOpen;

@@ -68,6 +68,16 @@ FuseTorrent::~FuseTorrent()
 }
 
 
+void *FuseTorrent::init(fuse_conn_info *conn)
+{
+    conn->async_read = 1;
+#ifndef _WIN64
+    conn->max_background = MAX_BACKGROUND_REQUESTS;
+#endif // !_WIN64
+    return this;
+}
+
+
 int FuseTorrent::getattr(const char *path, fuse_stat *stbuf)
 {
     std::memset(stbuf, 0, sizeof(fuse_stat));
@@ -117,6 +127,7 @@ int FuseTorrent::open(const char *path, fuse_file_info *fi)
         return -EACCES;
     }
     fi->fh = static_cast<std::uint64_t>(static_cast<int>(*fIdx));
+    fi->direct_io = 1;
     return 0;
 }
 
@@ -157,15 +168,16 @@ int FuseTorrent::read(const char *, char *buf, std::size_t const sizeRequested,
 
 int FuseTorrent::readFromPiece(char *buf, lt::peer_request const &peerRequest)
 {
-    PieceData const data = loadWithCache(peerRequest.piece);
-    if (!data) {
-        return -EIO;
+    PieceReadResult const piece = loadWithCache(peerRequest.piece);
+    if (piece.error != 0) {
+        return piece.error;
     }
 
     int const availableInPiece =
             m_torrentInfo->piece_size(peerRequest.piece) - peerRequest.start;
     int const bytes = std::min(peerRequest.length, availableInPiece);
-    std::memcpy(buf, data.get() + peerRequest.start, static_cast<std::size_t>(bytes));
+    std::memcpy(buf, piece.data.get() + peerRequest.start,
+            static_cast<std::size_t>(bytes));
     return bytes;
 }
 
@@ -209,26 +221,26 @@ void FuseTorrent::failPendingPieceRequests()
 }
 
 
-PieceData FuseTorrent::loadWithCache(lt::piece_index_t const pIdx)
+PieceReadResult FuseTorrent::loadWithCache(lt::piece_index_t const pIdx)
 {
     {
         std::scoped_lock<std::mutex> lock(m_pieceCacheMutex);
         if (PieceData const *const cached = m_pieceCache.get(pIdx)) {
-            return *cached;
+            return {*cached, 0};
         }
     }
 
-    PieceData data = loadFromTorrent(pIdx);
-    if (!data) {
-        return data;
+    PieceReadResult piece = loadFromTorrent(pIdx);
+    if (piece.error != 0) {
+        return piece;
     }
 
     std::scoped_lock<std::mutex> lock(m_pieceCacheMutex);
-    return m_pieceCache.insert(pIdx, std::move(data));
+    return {m_pieceCache.insert(pIdx, std::move(piece.data)), 0};
 }
 
 
-PieceData FuseTorrent::loadFromTorrent(lt::piece_index_t const pIdx)
+PieceReadResult FuseTorrent::loadFromTorrent(lt::piece_index_t const pIdx)
 {
     std::shared_future<PieceData> pieceDataFuture = placePieceRequest(pIdx);
     requestPieceDownload(pIdx);
@@ -249,7 +261,7 @@ std::shared_future<PieceData> FuseTorrent::placePieceRequest(
 }
 
 
-PieceData FuseTorrent::waitForData(
+PieceReadResult FuseTorrent::waitForData(
         lt::piece_index_t const pIdx,
         std::shared_future<PieceData> pieceDataFuture)
 {
@@ -258,8 +270,15 @@ PieceData FuseTorrent::waitForData(
         m_pieceProgress.set_option(indicators::option::Completed(false));
         m_progressBars.set_progress<1>(std::size_t{0});
     }
-    while (pieceDataFuture.wait_for(std::chrono::milliseconds(60)) !=
+    auto const deadline = std::chrono::steady_clock::now() + PIECE_READ_TIMEOUT;
+    while (pieceDataFuture.wait_for(PIECE_WAIT_POLL_INTERVAL) !=
             std::future_status::ready) {
+        if (fuse_interrupted()) {
+            return {PieceData(), -EINTR};
+        }
+        if (std::chrono::steady_clock::now() >= deadline) {
+            return {PieceData(), -EIO};
+        }
         std::vector<lt::partial_piece_info> const downloadQueue =
                 m_torrentHandle.get_download_queue();
         auto const it = std::ranges::find_if(downloadQueue,
@@ -277,7 +296,11 @@ PieceData FuseTorrent::waitForData(
         m_progressBars.set_progress<1>(std::size_t{100});
     }
 
-    return pieceDataFuture.get();
+    PieceData data = pieceDataFuture.get();
+    if (!data) {
+        return {PieceData(), -EIO};
+    }
+    return {std::move(data), 0};
 }
 
 
