@@ -16,6 +16,7 @@
 #include <future>
 #include <mutex>
 #include <filesystem>
+#include <stop_token>
 
 
 namespace detail
@@ -48,13 +49,16 @@ public:
             struct fuse_file_info *fi);
 
 private:
-    void torrentDownloadCycle();
-    
+    void torrentDownloadCycle(std::stop_token stopToken);
+    void failPendingPieceRequests();
+
     PieceData loadWithCache(lt::piece_index_t pIdx);
     PieceData loadFromTorrent(lt::piece_index_t pIdx);
     std::shared_future<PieceData> placePieceRequest(lt::piece_index_t pIdx);
     PieceData waitForData(lt::piece_index_t pIdx,
             std::shared_future<PieceData> pieceDataFuture);
+
+    int readFromPiece(char *buf, lt::peer_request const &peerRequest);
 
     void requestPieceDownload(lt::piece_index_t pIdx);
 
@@ -71,12 +75,15 @@ private:
 
     detail::PathResolver m_pathResolver;
 
-    std::mutex m_pieceRequiestsMutex;
-    std::map<lt::piece_index_t, PieceRequest> m_pieceRequiests;
+    std::mutex m_progressMutex;
 
+    std::mutex m_pieceRequestsMutex;
+    std::map<lt::piece_index_t, PieceRequest> m_pieceRequests;
+
+    std::mutex m_pieceCacheMutex;
     detail::Cache<lt::piece_index_t, PieceData, 32> m_pieceCache;
 
-    std::thread m_torrentDownloadThread;
+    std::jthread m_torrentDownloadThread;
 };
 
 }

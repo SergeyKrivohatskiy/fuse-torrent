@@ -1,7 +1,6 @@
 #ifndef _DETAIL_CACHE_HPP
 #define _DETAIL_CACHE_HPP
 #include <list>
-#include <cassert>
 #include <algorithm>
 
 
@@ -22,9 +21,6 @@ private:
 };
 
 
-#endif // _DETAIL_CACHE_HPP
-
-
 template<class Key, class Value, size_t CAPACITY>
 Cache<Key, Value, CAPACITY>::Cache():
     m_data()
@@ -43,10 +39,9 @@ Value *Cache<Key, Value, CAPACITY>::get(Key key)
     if (it == m_data.end()) {
         return nullptr;
     }
-    
-    m_data.push_back(std::move(*it));
-    m_data.erase(it);
-    
+
+    m_data.splice(m_data.end(), m_data, it);
+
     return &m_data.back().second;
 }
 
@@ -54,7 +49,10 @@ Value *Cache<Key, Value, CAPACITY>::get(Key key)
 template<class Key, class Value, size_t CAPACITY>
 Value &Cache<Key, Value, CAPACITY>::insert(Key key, Value value)
 {
-    assert(!get(key));
+    if (Value *const present = get(key)) {
+        *present = std::move(value);
+        return *present;
+    }
     if (m_data.size() == CAPACITY) {
         m_data.pop_front();
     }
@@ -63,3 +61,5 @@ Value &Cache<Key, Value, CAPACITY>::insert(Key key, Value value)
 
 }
 // namespace detail
+
+#endif // _DETAIL_CACHE_HPP
